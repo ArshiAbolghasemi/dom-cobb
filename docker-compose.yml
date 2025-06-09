@@ -1,0 +1,59 @@
+services:
+  dom-cobb:
+    container_name: dom-cobb
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT}:${APP_INTERNAL_PORT}"
+    environment:
+      - ENV=${ENVIRONMENT}
+    depends_on:
+      - mongo
+      - postgres
+    networks:
+      - app-network
+    restart: unless-stopped
+    command: tail -f /dev/null
+
+  mongo:
+    image: mongo:8.0.10
+    container_name: dom-cobb-mongodb-${ENVIRONMENT}
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    ports:
+      - "${MONGO_PORT}:${MONGO_INTERNAL_PORT}"
+    volumes:
+      - mongo_data_${ENVIRONMENT}:/data/db
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:17.5
+    container_name: dom-cobb-postgresql-${ENVIRONMENT}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_INTERNAL_PORT}"
+    volumes:
+      - postgres_data_${ENVIRONMENT}:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+volumes:
+  mongo_data_development:
+    driver: local
+  mongo_data_test:
+    driver: local
+  postgres_data_development:
+    driver: local
+  postgres_data_test:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
