@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
 type FeatureFlag struct {
 	gorm.Model
 	Name     string `gorm:"uniqueIndex;size:255;not null" json:"name"`
@@ -14,9 +13,9 @@ type FeatureFlag struct {
 }
 
 type FlagDependency struct {
-	FlagID          uint       `gorm:"primaryKey;not null" json:"flag_id"`
-	DependsOnFlagID uint       `gorm:"primaryKey;not null" json:"depends_on_flag_id"`
-	CreatedAt       time.Time  `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
+	FlagID          uint      `gorm:"primaryKey;not null" json:"flag_id"`
+	DependsOnFlagID uint      `gorm:"primaryKey;not null" json:"depends_on_flag_id"`
+	CreatedAt       time.Time `gorm:"not null;default:CURRENT_TIMESTAMP" json:"created_at"`
 }
 
 func (FeatureFlag) TableName() string {
