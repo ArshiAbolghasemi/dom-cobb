@@ -1,12 +1,20 @@
 package flags
 
-import "github.com/ArshiAbolghasemi/dom-cobb/internal/database/postgres"
+import (
+	"errors"
+
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/postgres"
+	"gorm.io/gorm"
+)
 
 func GetFlagByName(name string) (*FeatureFlag, error) {
 	var flag FeatureFlag
 	db := postgres.GetDB()
-
-	if err := db.Where("name = ?", name).First(&flag).Error; err != nil {
+	err := db.Where("name = ?", name).First(&flag).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
