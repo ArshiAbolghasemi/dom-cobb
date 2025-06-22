@@ -6,15 +6,16 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${APP_PORT}:${APP_INTERNAL_PORT}"
-    environment:
-      - ENV=${ENVIRONMENT}
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro
     depends_on:
       - mongo
       - postgres
     networks:
       - app-network
     restart: unless-stopped
-    command: tail -f /dev/null
 
   mongo:
     image: mongo:8.0.10
