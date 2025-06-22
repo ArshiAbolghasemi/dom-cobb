@@ -9,7 +9,7 @@ import (
 
 type CreateFeatureFlagRequest struct {
 	Name                      string `json:"name" binding:"required,min=1,max=255"`
-	IsActive                  bool   `json:"active" binding:"required"`
+	IsActive                  bool   `json:"active"`
 	FeatureFlagIDDependencies []uint `json:"feature_flag_id_dependencies"`
 }
 
