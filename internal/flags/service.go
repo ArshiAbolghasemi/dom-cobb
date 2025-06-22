@@ -65,7 +65,7 @@ func ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *CreateFeatureFlagR
 
 		return true, &req, dependencyFlags
 	} else {
-		return false, &req, nil
+		return true, &req, nil
 	}
 }
 
