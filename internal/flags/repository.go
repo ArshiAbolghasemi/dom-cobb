@@ -20,3 +20,14 @@ func GetFlagByName(name string) (*FeatureFlag, error) {
 
 	return &flag, nil
 }
+
+func GetFlagByIds(flagIds []uint) ([]FeatureFlag, error) {
+	var flags []FeatureFlag
+	db := postgres.GetDB()
+	err := db.Where("id IN ?", flagIds).Find(&flags).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return flags, nil
+}
