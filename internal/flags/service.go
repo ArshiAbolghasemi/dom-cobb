@@ -70,8 +70,8 @@ func ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *CreateFeatureFlagR
 }
 
 func CreateFeatureFlag(req *CreateFeatureFlagRequest, depenedencyFlags []FeatureFlag) error {
-	flag :=  FeatureFlag{
-		Name: req.Name,
+	flag := FeatureFlag{
+		Name:     req.Name,
 		IsActive: req.IsActive,
 	}
 	db := postgres.GetDB()
@@ -94,7 +94,7 @@ func CreateFeatureFlag(req *CreateFeatureFlagRequest, depenedencyFlags []Feature
 	var dependencies []FlagDependency
 	for _, depFlag := range depenedencyFlags {
 		dependencies = append(dependencies, FlagDependency{
-			FlagID: flag.ID,
+			FlagID:          flag.ID,
 			DependsOnFlagID: depFlag.ID,
 		})
 	}

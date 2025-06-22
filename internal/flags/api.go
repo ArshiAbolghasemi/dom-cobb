@@ -23,7 +23,7 @@ func CreateFeatureFlagAPI(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse{
-			Error: "Internal Server Error",
+			Error:   "Internal Server Error",
 			Message: err.Error(),
 		})
 		return
