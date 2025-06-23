@@ -35,38 +35,39 @@ func ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *CreateFeatureFlagR
 		return false, nil, nil
 	}
 
-	if len(req.FeatureFlagIDDependencies) > 0 {
-		dependencyFlags, err := GetFlagByIds(req.FeatureFlagIDDependencies)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, api.ErrorResponse{
-				Error:   "Internal Server Error",
-				Message: err.Error(),
-			})
-			return false, nil, nil
-		}
-		if len(dependencyFlags) != len(req.FeatureFlagIDDependencies) {
-			c.JSON(http.StatusBadRequest, api.ErrorResponse{
-				Error: "Invalid dependency feature flag ids",
-			})
-			return false, nil, nil
-		}
-
-		if req.IsActive {
-			for _, depFlag := range dependencyFlags {
-				if !depFlag.IsActive {
-					c.JSON(http.StatusBadRequest, api.ErrorResponse{
-						Error:   "Dependency validation failed",
-						Message: "Cannot activate feature flag when dependency '" + depFlag.Name + "' is inactive",
-					})
-					return false, nil, nil
-				}
-			}
-		}
-
-		return true, &req, dependencyFlags
-	} else {
+	if len(req.FeatureFlagIDDependencies) == 0 {
 		return true, &req, nil
 	}
+
+
+	dependencyFlags, err := GetFlagByIds(req.FeatureFlagIDDependencies)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ErrorResponse{
+			Error:   "Internal Server Error",
+			Message: err.Error(),
+		})
+		return false, nil, nil
+	}
+	if len(dependencyFlags) != len(req.FeatureFlagIDDependencies) {
+		c.JSON(http.StatusBadRequest, api.ErrorResponse{
+			Error: "Invalid dependency feature flag ids",
+		})
+		return false, nil, nil
+	}
+
+	if req.IsActive {
+		for _, depFlag := range dependencyFlags {
+			if !depFlag.IsActive {
+				c.JSON(http.StatusBadRequest, api.ErrorResponse{
+					Error:   "Dependency validation failed",
+					Message: "Cannot activate feature flag when dependency '" + depFlag.Name + "' is inactive",
+				})
+				return false, nil, nil
+			}
+		}
+	}
+
+	return true, &req, dependencyFlags
 }
 
 func CreateFeatureFlag(req *CreateFeatureFlagRequest, depenedencyFlags []FeatureFlag) error {
