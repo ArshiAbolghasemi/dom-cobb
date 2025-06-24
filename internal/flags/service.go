@@ -93,13 +93,5 @@ func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) error {
 		IsActive: req.IsActive,
 	}
 
-	var dependencies []FlagDependency
-	for _, depFlagID := range req.FeatureFlagIDDependencies {
-		dependencies = append(dependencies, FlagDependency{
-			FlagID:          flag.ID,
-			DependsOnFlagID: depFlagID,
-		})
-	}
-
-	return s.repo.CreateFlag(flag, dependencies)
+	return s.repo.CreateFlag(flag, req.FeatureFlagIDDependencies)
 }

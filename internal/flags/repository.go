@@ -11,7 +11,7 @@ import (
 type IRepository interface {
 	GetFlagByName(name string) (*FeatureFlag, error)
 	GetFlagByIds(flagIds []uint) ([]FeatureFlag, error)
-	CreateFlag(flag FeatureFlag, dependencyFlags []FlagDependency) error
+	CreateFlag(flag FeatureFlag, dependecnyFlagIds []uint) error
 }
 
 type Repository struct {
@@ -55,8 +55,8 @@ func (r *Repository) GetFlagByIds(flagIds []uint) ([]FeatureFlag, error) {
 	return flags, nil
 }
 
-func (r *Repository) CreateFlag(flag FeatureFlag, dependencyFlags []FlagDependency) error {
-	if len(dependencyFlags) == 0 {
+func (r *Repository) CreateFlag(flag FeatureFlag, dependecnyFlagIds []uint) error {
+	if len(dependecnyFlagIds) == 0 {
 		err := r.db.Create(&flag).Error
 		return err
 	}
@@ -71,6 +71,13 @@ func (r *Repository) CreateFlag(flag FeatureFlag, dependencyFlags []FlagDependen
 		return err
 	}
 
+	var dependencyFlags []FlagDependency
+	for _, depFlagID := range dependecnyFlagIds {
+		dependencyFlags = append(dependencyFlags, FlagDependency{
+			FlagID:          flag.ID,
+			DependsOnFlagID: depFlagID,
+		})
+	}
 	if err := tx.Create(&dependencyFlags).Error; err != nil {
 		tx.Rollback()
 		return err
