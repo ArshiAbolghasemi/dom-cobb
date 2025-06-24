@@ -16,6 +16,7 @@ type CreateFeatureFlagRequest struct {
 func CreateFeatureFlagAPI(c *gin.Context) {
 	repo := GetRepository()
 	service := GetService(repo)
+
 	valid, req := service.ValidateCreateFeatureFlagRequest(c)
 	if !valid {
 		return
