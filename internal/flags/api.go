@@ -14,12 +14,14 @@ type CreateFeatureFlagRequest struct {
 }
 
 func CreateFeatureFlagAPI(c *gin.Context) {
-	valid, req, dependencyFlags := ValidateCreateFeatureFlagRequest(c)
+	repo := GetRepository()
+	service := GetService(repo)
+	valid, req := service.ValidateCreateFeatureFlagRequest(c)
 	if !valid {
 		return
 	}
 
-	err := CreateFeatureFlag(req, dependencyFlags)
+	err := service.CreateFeatureFlag(req)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse{

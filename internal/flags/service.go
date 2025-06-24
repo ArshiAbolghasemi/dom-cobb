@@ -2,13 +2,31 @@ package flags
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/api"
-	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/postgres"
 	"github.com/gin-gonic/gin"
 )
 
-func ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *CreateFeatureFlagRequest, []FeatureFlag) {
+type Service struct {
+	repo IRepository
+}
+
+var (
+	service     *Service
+	onceService sync.Once
+)
+
+func GetService(repo IRepository) *Service {
+	onceService.Do(func() {
+		service = &Service{
+			repo: repo,
+		}
+	})
+	return service
+}
+
+func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *CreateFeatureFlagRequest) {
 	var req CreateFeatureFlagRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -16,43 +34,42 @@ func ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *CreateFeatureFlagR
 			Error:   "Invalid input format",
 			Message: err.Error(),
 		})
-		return false, nil, nil
+		return false, nil
 	}
 
-	flag, err := GetFlagByName(req.Name)
+	flag, err := s.repo.GetFlagByName(req.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse{
 			Error:   "Internal Server Error",
 			Message: err.Error(),
 		})
-		return false, nil, nil
+		return false, nil
 	}
 	if flag != nil {
 		c.JSON(http.StatusConflict, api.ErrorResponse{
 			Error:   "Feature flag already exists",
 			Message: "A feature flag with this name already exists",
 		})
-		return false, nil, nil
+		return false, nil
 	}
 
 	if len(req.FeatureFlagIDDependencies) == 0 {
-		return true, &req, nil
+		return true, &req
 	}
 
-
-	dependencyFlags, err := GetFlagByIds(req.FeatureFlagIDDependencies)
+	dependencyFlags, err := s.repo.GetFlagByIds(req.FeatureFlagIDDependencies)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ErrorResponse{
 			Error:   "Internal Server Error",
 			Message: err.Error(),
 		})
-		return false, nil, nil
+		return false, nil
 	}
 	if len(dependencyFlags) != len(req.FeatureFlagIDDependencies) {
 		c.JSON(http.StatusBadRequest, api.ErrorResponse{
 			Error: "Invalid dependency feature flag ids",
 		})
-		return false, nil, nil
+		return false, nil
 	}
 
 	if req.IsActive {
@@ -62,49 +79,27 @@ func ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *CreateFeatureFlagR
 					Error:   "Dependency validation failed",
 					Message: "Cannot activate feature flag when dependency '" + depFlag.Name + "' is inactive",
 				})
-				return false, nil, nil
+				return false, nil
 			}
 		}
 	}
 
-	return true, &req, dependencyFlags
+	return true, &req
 }
 
-func CreateFeatureFlag(req *CreateFeatureFlagRequest, depenedencyFlags []FeatureFlag) error {
+func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) error {
 	flag := FeatureFlag{
 		Name:     req.Name,
 		IsActive: req.IsActive,
 	}
-	db := postgres.GetDB()
-
-	if len(depenedencyFlags) == 0 {
-		err := db.Create(&flag).Error
-		return err
-	}
-
-	tx := db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	if err := tx.Create(&flag).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
 
 	var dependencies []FlagDependency
-	for _, depFlag := range depenedencyFlags {
+	for _, depFlagID := range req.FeatureFlagIDDependencies {
 		dependencies = append(dependencies, FlagDependency{
 			FlagID:          flag.ID,
-			DependsOnFlagID: depFlag.ID,
+			DependsOnFlagID: depFlagID,
 		})
 	}
 
-	if err := tx.Create(&dependencies).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	err := tx.Commit().Error
-	return err
+	return s.repo.CreateFlag(flag, dependencies)
 }
