@@ -4,16 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-
-	"github.com/joho/godotenv"
 )
 
 func GetDSN() (string, error) {
-	err := godotenv.Load()
-	if err != nil {
-		return "", err
-	}
-
 	host, exists := os.LookupEnv("POSTGRES_HOST")
 	if !exists {
 		return "", fmt.Errorf("Host Postgres is undefined")
