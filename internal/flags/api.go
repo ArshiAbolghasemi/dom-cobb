@@ -14,32 +14,28 @@ type CreateFeatureFlagRequest struct {
 	FeatureFlagIDDependencies []uint `json:"feature_flag_id_dependencies"`
 }
 
-func CreateFeatureFlagAPI(c *gin.Context) {
+func newFeatureFlagService() *Service {
 	repo := GetRepository()
 	logger := logger.NewService()
-	service := GetService(repo, logger)
+	return GetService(repo, logger)
+}
+
+func CreateFeatureFlagAPI(c *gin.Context) {
+	service := newFeatureFlagService()
 
 	apiErr, req := service.ValidateCreateFeatureFlagRequest(c)
 	if apiErr != nil {
-		c.JSON(apiErr.StatusCode, api.ErrorResponse{
-			Error:   apiErr.Error,
-			Message: apiErr.Message,
-		})
+		api.RespondAPIError(c, apiErr)
 		return
 	}
 
 	err := service.CreateFeatureFlag(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse{
-			Error:   "Internal Server Error",
-			Message: err.Error(),
-		})
+		api.RespondInternalError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, api.SuccessResponse{
-		Message: "Feature flag is created successfully",
-	})
+	api.RespondSuccess(c, http.StatusCreated, "Feature flag is created successfully", nil)
 }
 
 type UpdateFeatureFlagRequest struct {
@@ -48,30 +44,36 @@ type UpdateFeatureFlagRequest struct {
 }
 
 func UpdateFeatureFlagAPI(c *gin.Context) {
-	repo := GetRepository()
-	logger := logger.NewService()
-	service := GetService(repo, logger)
+	service := newFeatureFlagService()
 
 	apiErr, flag, req := service.ValidateUpdateFeatureFlagRequest(c)
 	if apiErr != nil {
-		c.JSON(apiErr.StatusCode, api.ErrorResponse{
-			Error:   apiErr.Error,
-			Message: apiErr.Message,
-		})
+		api.RespondAPIError(c, apiErr)
 		return
 	}
 
 	err := service.UpdateFeatureFlag(flag, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ErrorResponse{
-			Error:   "Internal Server Error",
-			Message: err.Error(),
-		})
+		api.RespondInternalError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, api.SuccessResponse{
-		Message: "Feature flag is updated successfully",
-	})
+	api.RespondSuccess(c, http.StatusOK, "Feature flag is updated successfully", nil)
+}
 
+func GetFeatureFlagAPI(c *gin.Context) {
+	service := newFeatureFlagService()
+
+	flag, apiErr := service.ValidateGetFeatureFlagRequest(c)
+	if apiErr  != nil {
+		api.RespondAPIError(c, apiErr)
+		return
+	}
+
+	data, err := service.GetFeatureFlag(flag)
+	if err != nil {
+		api.RespondInternalError(c, err)
+	}
+
+	api.RespondSuccess(c, http.StatusOK, "Feature flag is retrieved successfully", data)
 }

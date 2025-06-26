@@ -177,3 +177,52 @@ func (s *Service) UpdateFeatureFlag(flag *FeatureFlag, req *UpdateFeatureFlagReq
 
 	return nil
 }
+
+func (s *Service) ValidateGetFeatureFlagRequest(c *gin.Context) (*FeatureFlag, *api.APIError) {
+	flagId, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return nil, api.BadRequestError("Invalid input format", err.Error())
+	}
+
+	flag, err := s.repo.GetFlagById(uint(flagId))
+	if err != nil {
+		return nil, api.InternalServerError("Internal Server Error", err.Error())
+	}
+	if flag == nil {
+		return nil, api.NotFoundError("Invalid flag id", "")
+	}
+
+	return flag, nil
+}
+
+func (s *Service) GetFeatureFlag(flag *FeatureFlag) (map[string]any, error) {
+	dependencies, err := s.repo.GetFlagDependencies(flag)
+	if err != nil {
+		return nil, err
+	}
+
+	dependents, err := s.repo.GetFlagDependents(flag)
+	if err != nil {
+		return nil, err
+	}
+
+	dependencyIDs := make([]uint, 0, len(dependencies))
+	for _, dependency := range dependencies {
+		dependencyIDs = append(dependencyIDs, dependency.ID)
+	}
+
+	dependentIDs := make([]uint, 0, len(dependents))
+	for _, depentent := range dependents {
+		dependentIDs = append(dependentIDs, depentent.ID)
+	}
+
+	data := map[string]any{
+		"id":           flag.ID,
+		"name":         flag.Name,
+		"active":       flag.IsActive,
+		"dependencies": dependencyIDs,
+		"dependents":   dependentIDs,
+	}
+
+	return data, nil
+}
