@@ -25,7 +25,7 @@ func RespondAPIError(c *gin.Context, apiErr *APIError) {
 
 func RespondInternalError(c *gin.Context, err error) {
 	c.JSON(http.StatusInternalServerError, ErrorResponse{
-		Error: "Internal Server Error",
+		Error:   "Internal Server Error",
 		Message: err.Error(),
 	})
 }
@@ -33,6 +33,6 @@ func RespondInternalError(c *gin.Context, err error) {
 func RespondSuccess(c *gin.Context, statusCode int, msg string, data any) {
 	c.JSON(statusCode, SuccessResponse{
 		Message: msg,
-		Data: data,
+		Data:    data,
 	})
 }
