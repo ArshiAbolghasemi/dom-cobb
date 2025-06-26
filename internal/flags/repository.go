@@ -11,7 +11,7 @@ import (
 type IRepository interface {
 	GetFlagByName(name string) (*FeatureFlag, error)
 	GetFlagByIds(flagIds []uint) ([]FeatureFlag, error)
-	CreateFlag(flag FeatureFlag, dependecnyFlagIds []uint) error
+	CreateFlag(name string, active bool, dependecnyFlagIds []uint) (*FeatureFlag, error)
 }
 
 type Repository struct {
@@ -55,20 +55,25 @@ func (r *Repository) GetFlagByIds(flagIds []uint) ([]FeatureFlag, error) {
 	return flags, nil
 }
 
-func (r *Repository) CreateFlag(flag FeatureFlag, dependecnyFlagIds []uint) error {
+func (r *Repository) CreateFlag(name string, active bool, dependecnyFlagIds []uint) (*FeatureFlag, error) {
+	flag := FeatureFlag{
+		Name:     name,
+		IsActive: active,
+	}
+
 	if len(dependecnyFlagIds) == 0 {
 		err := r.db.Create(&flag).Error
-		return err
+		return &flag, err
 	}
 
 	tx := r.db.Begin()
 	if tx.Error != nil {
-		return tx.Error
+		return nil, tx.Error
 	}
 
 	if err := tx.Create(&flag).Error; err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	var dependencyFlags []FlagDependency
@@ -80,9 +85,13 @@ func (r *Repository) CreateFlag(flag FeatureFlag, dependecnyFlagIds []uint) erro
 	}
 	if err := tx.Create(&dependencyFlags).Error; err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	err := tx.Commit().Error
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	return &flag, nil
 }

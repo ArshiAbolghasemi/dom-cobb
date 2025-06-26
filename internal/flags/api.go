@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/api"
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +16,8 @@ type CreateFeatureFlagRequest struct {
 
 func CreateFeatureFlagAPI(c *gin.Context) {
 	repo := GetRepository()
-	service := GetService(repo)
+	logger := logger.NewService()
+	service := GetService(repo, logger)
 
 	valid, req := service.ValidateCreateFeatureFlagRequest(c)
 	if !valid {

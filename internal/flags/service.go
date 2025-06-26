@@ -5,11 +5,13 @@ import (
 	"sync"
 
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/api"
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/logger"
 	"github.com/gin-gonic/gin"
 )
 
 type Service struct {
-	repo IRepository
+	repo   IRepository
+	logger logger.IService
 }
 
 var (
@@ -17,10 +19,11 @@ var (
 	onceService sync.Once
 )
 
-func GetService(repo IRepository) *Service {
+func GetService(repo IRepository, logger logger.IService) *Service {
 	onceService.Do(func() {
 		service = &Service{
-			repo: repo,
+			repo:   repo,
+			logger: logger,
 		}
 	})
 	return service
@@ -88,10 +91,17 @@ func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (bool, *Creat
 }
 
 func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) error {
-	flag := FeatureFlag{
-		Name:     req.Name,
-		IsActive: req.IsActive,
+	flag, err := s.repo.CreateFlag(req.Name, req.IsActive, req.FeatureFlagIDDependencies)
+	if err != nil {
+		return err
 	}
 
-	return s.repo.CreateFlag(flag, req.FeatureFlagIDDependencies)
+	s.logger.Log(
+		"Feature Flag is created successfully",
+		map[string]any{
+			"flag_id": flag.ID,
+		},
+	)
+
+	return nil
 }
