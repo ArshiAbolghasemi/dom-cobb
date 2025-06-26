@@ -30,44 +30,44 @@ func GetService(repo IRepository, logger logger.IService) *Service {
 	return service
 }
 
-func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*api.APIError, *CreateFeatureFlagRequest) {
+func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*CreateFeatureFlagRequest, *api.APIError) {
 	var req CreateFeatureFlagRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return api.BadRequestError("Invalid input format", err.Error()), nil
+		return nil, api.BadRequestError("Invalid input format", err.Error())
 	}
 
 	flag, err := s.repo.GetFlagByName(req.Name)
 	if err != nil {
-		return api.InternalServerError("Internal Server Error", err.Error()), nil
+		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
 	if flag != nil {
-		return api.ConflictError("Feature flag already exists", "A feature flag with this name already exists"), nil
+		return nil, api.ConflictError("Feature flag already exists", "A feature flag with this name already exists")
 	}
 
 	if len(req.FeatureFlagIDDependencies) == 0 {
-		return nil, &req
+		return &req, nil
 	}
 
 	dependencyFlags, err := s.repo.GetFlagByIds(req.FeatureFlagIDDependencies)
 	if err != nil {
 
-		return api.InternalServerError("Internal Server Error", err.Error()), nil
+		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
 	if len(dependencyFlags) != len(req.FeatureFlagIDDependencies) {
-		return api.NotFoundError("Invalid dependency feature flag ids", ""), nil
+		return nil, api.NotFoundError("Invalid dependency feature flag ids", "")
 	}
 
 	if req.IsActive {
 		if !s.canActivateFlag(dependencyFlags) {
-			return api.BadRequestError(
+			return nil, api.BadRequestError(
 				"Dependency validation failed",
 				"Cannot activate feature flag when dependencies are inactive",
-			), nil
+			)
 		}
 	}
 
-	return nil, &req
+	return &req, nil
 }
 
 func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) error {
@@ -89,57 +89,57 @@ func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) error {
 func (s *Service) ValidateUpdateFeatureFlagRequest(
 	c *gin.Context,
 ) (
-	*api.APIError,
 	*FeatureFlag,
 	*UpdateFeatureFlagRequest,
+	*api.APIError,
 ) {
 	flagId, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		return api.BadRequestError("Invalid input format", err.Error()), nil, nil
+		return nil, nil, api.BadRequestError("Invalid input format", err.Error())
 	}
 	var req UpdateFeatureFlagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		return api.BadRequestError("Invalid input format", err.Error()), nil, nil
+		return nil, nil, api.BadRequestError("Invalid input format", err.Error())
 	}
 	flag, err := s.repo.GetFlagById(uint(flagId))
 	if err != nil {
-		return api.InternalServerError("Internal Server Error", err.Error()), nil, nil
+		return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
 	if flag == nil {
-		return api.NotFoundError("Invalid flag id", ""), nil, nil
+		return nil, nil, api.NotFoundError("Invalid flag id", "")
 	}
 	if req.IsActive == flag.IsActive {
 		status := "active"
 		if !flag.IsActive {
 			status = "inactive"
 		}
-		return api.OKError(fmt.Sprintf("Flag is already %s", status), ""), nil, nil
+		return nil, nil, api.OKError(fmt.Sprintf("Flag is already %s", status), "")
 	}
 	if req.IsActive {
 		flagDependencies, err := s.repo.GetFlagDependencies(flag)
 		if err != nil {
-			return api.InternalServerError("Internal Server Error", err.Error()), nil, nil
+			return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 		}
 		if !s.canActivateFlag(flagDependencies) {
-			return api.BadRequestError(
+			return nil, nil, api.BadRequestError(
 				"Dependencies not satisfied",
 				"Cannot activate feature flag when dependencies are inactive",
-			), nil, nil
+			)
 		}
 	} else {
 		flagDependents, err := s.repo.GetFlagDependents(flag)
 		if err != nil {
-			return api.InternalServerError("Internal Server Error", err.Error()), nil, nil
+			return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 		}
 		if !s.canDeactivateFlag(flagDependents) {
-			return api.BadRequestError(
+			return nil, nil, api.BadRequestError(
 				"Dependents still active",
 				"Cannot dectivate feature flag when dependents are active",
-			), nil, nil
+			)
 		}
 	}
 
-	return nil, flag, &req
+	return flag, &req, nil
 }
 
 func (s *Service) canActivateFlag(flagDependencies []*FeatureFlag) bool {

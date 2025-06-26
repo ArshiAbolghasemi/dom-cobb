@@ -23,7 +23,7 @@ func newFeatureFlagService() *Service {
 func CreateFeatureFlagAPI(c *gin.Context) {
 	service := newFeatureFlagService()
 
-	apiErr, req := service.ValidateCreateFeatureFlagRequest(c)
+	req, apiErr := service.ValidateCreateFeatureFlagRequest(c)
 	if apiErr != nil {
 		api.RespondAPIError(c, apiErr)
 		return
@@ -46,7 +46,7 @@ type UpdateFeatureFlagRequest struct {
 func UpdateFeatureFlagAPI(c *gin.Context) {
 	service := newFeatureFlagService()
 
-	apiErr, flag, req := service.ValidateUpdateFeatureFlagRequest(c)
+	flag, req, apiErr := service.ValidateUpdateFeatureFlagRequest(c)
 	if apiErr != nil {
 		api.RespondAPIError(c, apiErr)
 		return
