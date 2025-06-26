@@ -195,7 +195,7 @@ func (s *Service) ValidateGetFeatureFlagRequest(c *gin.Context) (*FeatureFlag, *
 	return flag, nil
 }
 
-func (s *Service) GetFeatureFlag(flag *FeatureFlag) (map[string]any, error) {
+func (s *Service) GetFeatureFlag(flag *FeatureFlag) (*FeatureFlagData, error) {
 	dependencies, err := s.repo.GetFlagDependencies(flag)
 	if err != nil {
 		return nil, err
@@ -216,13 +216,11 @@ func (s *Service) GetFeatureFlag(flag *FeatureFlag) (map[string]any, error) {
 		dependentIDs = append(dependentIDs, depentent.ID)
 	}
 
-	data := map[string]any{
-		"id":           flag.ID,
-		"name":         flag.Name,
-		"active":       flag.IsActive,
-		"dependencies": dependencyIDs,
-		"dependents":   dependentIDs,
-	}
-
-	return data, nil
+	return &FeatureFlagData{
+		ID:           flag.ID,
+		Name:         flag.Name,
+		Active:       flag.IsActive,
+		Dependencies: dependencyIDs,
+		Dependents:   dependentIDs,
+	}, nil
 }

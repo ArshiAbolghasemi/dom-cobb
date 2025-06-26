@@ -61,11 +61,19 @@ func UpdateFeatureFlagAPI(c *gin.Context) {
 	api.RespondSuccess(c, http.StatusOK, "Feature flag is updated successfully", nil)
 }
 
+type FeatureFlagData struct {
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	Active       bool   `json:"active"`
+	Dependencies []uint `json:"dependencies"`
+	Dependents   []uint `json:"dependents"`
+}
+
 func GetFeatureFlagAPI(c *gin.Context) {
 	service := newFeatureFlagService()
 
 	flag, apiErr := service.ValidateGetFeatureFlagRequest(c)
-	if apiErr  != nil {
+	if apiErr != nil {
 		api.RespondAPIError(c, apiErr)
 		return
 	}
