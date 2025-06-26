@@ -43,7 +43,8 @@ func CreateFeatureFlagAPI(c *gin.Context) {
 }
 
 type UpdateFeatureFlagRequest struct {
-	IsActive bool `json:"active"`
+	IsActive bool   `json:"active"`
+	Reason   string `json:"reason" binding:"required,min=1,max=255"`
 }
 
 func UpdateFeatureFlagAPI(c *gin.Context) {

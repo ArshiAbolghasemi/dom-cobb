@@ -171,6 +171,7 @@ func (s *Service) UpdateFeatureFlag(flag *FeatureFlag, req *UpdateFeatureFlagReq
 		map[string]any{
 			"flag_id": flag.ID,
 			"active":  flag.IsActive,
+			"reason":  req.Reason,
 		},
 	)
 
