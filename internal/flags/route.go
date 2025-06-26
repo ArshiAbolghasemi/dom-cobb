@@ -8,5 +8,6 @@ func SetupRoutes(router *gin.Engine) {
 	{
 		v1 := router.Group("/api/v1")
 		v1.POST("/flags", CreateFeatureFlagAPI)
+		v1.PATCH("/flags/:id", UpdateFeatureFlagAPI)
 	}
 }
