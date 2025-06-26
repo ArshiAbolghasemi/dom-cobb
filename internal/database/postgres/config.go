@@ -28,10 +28,7 @@ func GetDSN() (string, error) {
 		return "", fmt.Errorf("DBName Postgres is undefined")
 	}
 
-	return fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s",
-		host, user, password, dbname, port,
-	), nil
+	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, password, dbname, port), nil
 }
 
 func GetMaxOpenConnections() (int, error) {

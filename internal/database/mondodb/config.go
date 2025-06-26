@@ -25,10 +25,7 @@ func GetURI() (string, error) {
 		return "", fmt.Errorf("Mongo password is undefined")
 	}
 
-	return fmt.Sprintf(
-		"mongodb://%s:%s@%s:%s",
-		username, password, host, port,
-	), nil
+	return fmt.Sprintf("mongodb://%s:%s@%s:%s", username, password, host, port), nil
 }
 
 func GetConnectionTimeout() (time.Duration, error) {
