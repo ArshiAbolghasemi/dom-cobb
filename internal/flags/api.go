@@ -23,15 +23,15 @@ func newFeatureFlagService() *Service {
 func CreateFeatureFlagAPI(c *gin.Context) {
 	service := newFeatureFlagService()
 
-	req, apiErr := service.ValidateCreateFeatureFlagRequest(c)
-	if apiErr != nil {
-		api.RespondAPIError(c, apiErr)
+	req, err := service.ValidateCreateFeatureFlagRequest(c)
+	if err != nil {
+		api.RespondAPIError(c, err)
 		return
 	}
 
-	err := service.CreateFeatureFlag(req)
+	err = service.CreateFeatureFlag(req)
 	if err != nil {
-		api.RespondInternalError(c, err)
+		api.RespondAPIError(c, err)
 		return
 	}
 
@@ -46,15 +46,15 @@ type UpdateFeatureFlagRequest struct {
 func UpdateFeatureFlagAPI(c *gin.Context) {
 	service := newFeatureFlagService()
 
-	flag, req, apiErr := service.ValidateUpdateFeatureFlagRequest(c)
-	if apiErr != nil {
-		api.RespondAPIError(c, apiErr)
+	flag, req, err := service.ValidateUpdateFeatureFlagRequest(c)
+	if err != nil {
+		api.RespondAPIError(c, err)
 		return
 	}
 
-	err := service.UpdateFeatureFlag(flag, req)
+	err = service.UpdateFeatureFlag(flag, req)
 	if err != nil {
-		api.RespondInternalError(c, err)
+		api.RespondAPIError(c, err)
 		return
 	}
 
@@ -72,16 +72,44 @@ type FeatureFlagData struct {
 func GetFeatureFlagAPI(c *gin.Context) {
 	service := newFeatureFlagService()
 
-	flag, apiErr := service.ValidateGetFeatureFlagRequest(c)
-	if apiErr != nil {
-		api.RespondAPIError(c, apiErr)
+	flag, err := service.ValidateGetFeatureFlagRequest(c)
+	if err != nil {
+		api.RespondAPIError(c, err)
 		return
 	}
 
 	data, err := service.GetFeatureFlag(flag)
 	if err != nil {
-		api.RespondInternalError(c, err)
+		api.RespondAPIError(c, err)
+		return
 	}
 
 	api.RespondSuccess(c, http.StatusOK, "Feature flag is retrieved successfully", data)
+}
+
+type GetFeatureFlagLogsQueryParams struct {
+	api.PaginationQueryParam
+}
+
+type GetFeatureFlagLogsData struct {
+	Logs []*logger.LogEntry `json:"logs"`
+	api.PaginationResponse
+}
+
+func GetFeatureFlagLogsAPI(c *gin.Context) {
+	service := newFeatureFlagService()
+
+	query, flag, apiErr := service.ValidateGetFeatureFlagLogsRequest(c)
+	if apiErr != nil {
+		api.RespondAPIError(c, apiErr)
+		return
+	}
+
+	data, err := service.GetFeatureFlagLogs(flag, query)
+	if err != nil {
+		api.RespondAPIError(c, err)
+		return
+	}
+
+	api.RespondSuccess(c, http.StatusOK, "Feature flag logs is retrieved successfully", data)
 }

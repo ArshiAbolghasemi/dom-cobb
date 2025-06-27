@@ -70,10 +70,10 @@ func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*CreateFeatu
 	return &req, nil
 }
 
-func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) error {
+func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) *api.APIError {
 	flag, err := s.repo.CreateFlag(req.Name, req.IsActive, req.FeatureFlagIDDependencies)
 	if err != nil {
-		return err
+		return api.InternalServerError("Internal Server Error", err.Error())
 	}
 
 	s.logger.Log(
@@ -160,10 +160,10 @@ func (s *Service) canDeactivateFlag(flagDependents []*FeatureFlag) bool {
 	return true
 }
 
-func (s *Service) UpdateFeatureFlag(flag *FeatureFlag, req *UpdateFeatureFlagRequest) error {
+func (s *Service) UpdateFeatureFlag(flag *FeatureFlag, req *UpdateFeatureFlagRequest) *api.APIError {
 	err := s.repo.UpdateFlag(flag, req.IsActive)
 	if err != nil {
-		return err
+		return api.InternalServerError("Internal Server Error", err.Error())
 	}
 
 	s.logger.Log(
@@ -195,15 +195,15 @@ func (s *Service) ValidateGetFeatureFlagRequest(c *gin.Context) (*FeatureFlag, *
 	return flag, nil
 }
 
-func (s *Service) GetFeatureFlag(flag *FeatureFlag) (*FeatureFlagData, error) {
+func (s *Service) GetFeatureFlag(flag *FeatureFlag) (*FeatureFlagData, *api.APIError) {
 	dependencies, err := s.repo.GetFlagDependencies(flag)
 	if err != nil {
-		return nil, err
+		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
 
 	dependents, err := s.repo.GetFlagDependents(flag)
 	if err != nil {
-		return nil, err
+		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
 
 	dependencyIDs := make([]uint, 0, len(dependencies))
@@ -222,5 +222,55 @@ func (s *Service) GetFeatureFlag(flag *FeatureFlag) (*FeatureFlagData, error) {
 		Active:       flag.IsActive,
 		Dependencies: dependencyIDs,
 		Dependents:   dependentIDs,
+	}, nil
+}
+
+func (s *Service) ValidateGetFeatureFlagLogsRequest(
+	c *gin.Context,
+) (
+	*GetFeatureFlagLogsQueryParams,
+	*FeatureFlag,
+	*api.APIError,
+) {
+	flagId, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		return nil, nil, api.BadRequestError("Invalid input format", err.Error())
+	}
+	flag, err := s.repo.GetFlagById(uint(flagId))
+	if err != nil {
+		return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
+	}
+	if flag == nil {
+		return nil, nil, api.NotFoundError("Invalid flag id", "")
+	}
+
+	var query GetFeatureFlagLogsQueryParams
+	if err := c.ShouldBindQuery(&query); err != nil {
+		return nil, nil, api.BadRequestError("Invalid input format", err.Error())
+	}
+
+	return &query, flag, nil
+}
+
+func (s *Service) GetFeatureFlagLogs(
+	flag *FeatureFlag,
+	query *GetFeatureFlagLogsQueryParams,
+) (
+	*GetFeatureFlagLogsData,
+	*api.APIError,
+) {
+	logs, total, totalPages, err := s.repo.GetFeatureFlagLogs(flag, uint(query.Size), uint(query.Page))
+	if err != nil {
+		return nil, api.InternalServerError("Internal Server Error", err.Error())
+	}
+
+	return &GetFeatureFlagLogsData{
+		Logs: logs,
+		PaginationResponse: api.PaginationResponse{
+			Page: query.Page,
+			Size: query.Size,
+			Total: int64(total),
+			TotalPages: int(totalPages),
+		},
 	}, nil
 }

@@ -10,5 +10,6 @@ func SetupRoutes(router *gin.Engine) {
 		v1.POST("/flags", CreateFeatureFlagAPI)
 		v1.PATCH("/flags/:id", UpdateFeatureFlagAPI)
 		v1.GET("/flags/:id", GetFeatureFlagAPI)
+		v1.GET("/flags/:id/logs", GetFeatureFlagLogsAPI)
 	}
 }
