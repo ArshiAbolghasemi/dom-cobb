@@ -1,11 +1,17 @@
 package flags
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/mongodb"
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/postgres"
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/logger"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/gorm"
 )
 
@@ -15,12 +21,14 @@ type IRepository interface {
 	GetFlagById(flagId uint) (*FeatureFlag, error)
 	GetFlagDependencies(flag *FeatureFlag) ([]*FeatureFlag, error)
 	GetFlagDependents(flag *FeatureFlag) ([]*FeatureFlag, error)
+	GetFeatureFlagLogs(flag *FeatureFlag, limit, offset uint) ([]*logger.LogEntry, uint, uint, error)
 	CreateFlag(name string, active bool, dependecnyFlagIds []uint) (*FeatureFlag, error)
 	UpdateFlag(flag *FeatureFlag, active bool) error
 }
 
 type Repository struct {
-	db *gorm.DB
+	db         *gorm.DB
+	collection *mongo.Collection
 }
 
 var (
@@ -30,8 +38,13 @@ var (
 
 func GetRepository() IRepository {
 	onceRepo.Do(func() {
+		loggerCollection, err := logger.GetCollection()
+		if err != nil {
+			panic("Failed to get logger collection: " + err.Error())
+		}
 		repo = &Repository{
 			db: postgres.GetDB(),
+			collection: mongodb.GetCollection(loggerCollection),
 		}
 	})
 	return repo
@@ -152,4 +165,38 @@ func (r *Repository) UpdateFlag(flag *FeatureFlag, active bool) error {
 	flag.IsActive = active
 
 	return nil
+}
+
+func (r *Repository) GetFeatureFlagLogs(flag *FeatureFlag, limit, offset uint) ([]*logger.LogEntry, uint, uint, error) {
+	ctx := context.Background()
+	pager := &mongodb.Pager{
+		Limit: limit,
+		Offset: offset,
+	}
+	
+	filter := bson.M{"metadata.flag_id": flag.ID}
+
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	pager.SetTotal(uint(total))
+		
+	findOptions := options.Find()
+	findOptions.SetLimit(int64(limit))
+	findOptions.SetSkip(int64(offset))
+	findOptions.SetSort(bson.D{{Key: "timestamp", Value: -1}})
+	
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	defer cursor.Close(ctx)
+	
+	var logs []*logger.LogEntry
+	if err = cursor.All(ctx, &logs); err != nil {
+		return nil, 0, 0, err
+	}
+	
+	return logs, pager.Total, pager.TotalPages, nil
 }
