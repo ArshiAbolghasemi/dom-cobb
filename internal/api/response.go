@@ -1,8 +1,6 @@
 package api
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,16 +21,16 @@ func RespondAPIError(c *gin.Context, apiErr *APIError) {
 	})
 }
 
-func RespondInternalError(c *gin.Context, err error) {
-	c.JSON(http.StatusInternalServerError, ErrorResponse{
-		Error:   "Internal Server Error",
-		Message: err.Error(),
-	})
-}
-
 func RespondSuccess(c *gin.Context, statusCode int, msg string, data any) {
 	c.JSON(statusCode, SuccessResponse{
 		Message: msg,
 		Data:    data,
 	})
+}
+
+type PaginationResponse struct {
+	Page       int   `json:"page"`
+	Size       int   `json:"size"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"total_pages"`
 }
