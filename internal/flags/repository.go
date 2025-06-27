@@ -43,7 +43,7 @@ func GetRepository() IRepository {
 			panic("Failed to get logger collection: " + err.Error())
 		}
 		repo = &Repository{
-			db: postgres.GetDB(),
+			db:         postgres.GetDB(),
 			collection: mongodb.GetCollection(loggerCollection),
 		}
 	})
@@ -170,10 +170,10 @@ func (r *Repository) UpdateFlag(flag *FeatureFlag, active bool) error {
 func (r *Repository) GetFeatureFlagLogs(flag *FeatureFlag, limit, offset uint) ([]*logger.LogEntry, uint, uint, error) {
 	ctx := context.Background()
 	pager := &mongodb.Pager{
-		Limit: limit,
+		Limit:  limit,
 		Offset: offset,
 	}
-	
+
 	filter := bson.M{"metadata.flag_id": flag.ID}
 
 	total, err := r.collection.CountDocuments(ctx, filter)
@@ -181,22 +181,22 @@ func (r *Repository) GetFeatureFlagLogs(flag *FeatureFlag, limit, offset uint) (
 		return nil, 0, 0, err
 	}
 	pager.SetTotal(uint(total))
-		
+
 	findOptions := options.Find()
 	findOptions.SetLimit(int64(limit))
 	findOptions.SetSkip(int64(offset))
 	findOptions.SetSort(bson.D{{Key: "timestamp", Value: -1}})
-	
+
 	cursor, err := r.collection.Find(ctx, filter, findOptions)
 	if err != nil {
 		return nil, 0, 0, err
 	}
 	defer cursor.Close(ctx)
-	
+
 	var logs []*logger.LogEntry
 	if err = cursor.All(ctx, &logs); err != nil {
 		return nil, 0, 0, err
 	}
-	
+
 	return logs, pager.Total, pager.TotalPages, nil
 }
