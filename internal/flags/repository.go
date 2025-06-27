@@ -21,7 +21,7 @@ type IRepository interface {
 	GetFlagById(flagId uint) (*FeatureFlag, error)
 	GetFlagDependencies(flag *FeatureFlag) ([]*FeatureFlag, error)
 	GetFlagDependents(flag *FeatureFlag) ([]*FeatureFlag, error)
-	GetFeatureFlagLogs(flag *FeatureFlag, limit, offset uint) ([]*logger.LogEntry, uint, uint, error)
+	GetFeatureFlagLogs(flag *FeatureFlag, page, size uint) ([]*logger.LogEntry, uint, uint, error)
 	CreateFlag(name string, active bool, dependecnyFlagIds []uint) (*FeatureFlag, error)
 	UpdateFlag(flag *FeatureFlag, active bool) error
 }
@@ -167,11 +167,11 @@ func (r *Repository) UpdateFlag(flag *FeatureFlag, active bool) error {
 	return nil
 }
 
-func (r *Repository) GetFeatureFlagLogs(flag *FeatureFlag, limit, offset uint) ([]*logger.LogEntry, uint, uint, error) {
+func (r *Repository) GetFeatureFlagLogs(flag *FeatureFlag, page, size uint) ([]*logger.LogEntry, uint, uint, error) {
 	ctx := context.Background()
 	pager := &mongodb.Pager{
-		Limit:  limit,
-		Offset: offset,
+		Page: page,
+		Size: size,
 	}
 
 	filter := bson.M{"metadata.flag_id": flag.ID}
@@ -183,8 +183,8 @@ func (r *Repository) GetFeatureFlagLogs(flag *FeatureFlag, limit, offset uint) (
 	pager.SetTotal(uint(total))
 
 	findOptions := options.Find()
-	findOptions.SetLimit(int64(limit))
-	findOptions.SetSkip(int64(offset))
+	findOptions.SetLimit(int64(pager.GetLimit()))
+	findOptions.SetSkip(int64(pager.GetOffset()))
 	findOptions.SetSort(bson.D{{Key: "timestamp", Value: -1}})
 
 	cursor, err := r.collection.Find(ctx, filter, findOptions)

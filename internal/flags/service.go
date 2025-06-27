@@ -259,7 +259,7 @@ func (s *Service) GetFeatureFlagLogs(
 	*GetFeatureFlagLogsData,
 	*api.APIError,
 ) {
-	logs, total, totalPages, err := s.repo.GetFeatureFlagLogs(flag, query.Size, query.Page)
+	logs, total, totalPages, err := s.repo.GetFeatureFlagLogs(flag, query.Page, query.Size)
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
