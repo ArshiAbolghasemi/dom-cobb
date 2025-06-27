@@ -259,7 +259,7 @@ func (s *Service) GetFeatureFlagLogs(
 	*GetFeatureFlagLogsData,
 	*api.APIError,
 ) {
-	logs, total, totalPages, err := s.repo.GetFeatureFlagLogs(flag, uint(query.Size), uint(query.Page))
+	logs, total, totalPages, err := s.repo.GetFeatureFlagLogs(flag, query.Size, query.Page)
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
@@ -267,10 +267,10 @@ func (s *Service) GetFeatureFlagLogs(
 	return &GetFeatureFlagLogsData{
 		Logs: logs,
 		PaginationResponse: api.PaginationResponse{
-			Page: query.Page,
-			Size: query.Size,
-			Total: int64(total),
-			TotalPages: int(totalPages),
+			Page:       query.Page,
+			Size:       query.Size,
+			Total:      total,
+			TotalPages: totalPages,
 		},
 	}, nil
 }

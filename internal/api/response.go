@@ -29,8 +29,8 @@ func RespondSuccess(c *gin.Context, statusCode int, msg string, data any) {
 }
 
 type PaginationResponse struct {
-	Page       int   `json:"page"`
-	Size       int   `json:"size"`
-	Total      int64 `json:"total"`
-	TotalPages int   `json:"total_pages"`
+	Page       uint `json:"page"`
+	Size       uint `json:"size"`
+	Total      uint `json:"total"`
+	TotalPages uint `json:"total_pages"`
 }
