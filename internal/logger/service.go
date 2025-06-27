@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/mondodb"
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/mongodb"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -25,7 +25,7 @@ func NewService() IService {
 			panic("Failed to get logger collection name: " + err.Error())
 		}
 		service = &Service{
-			collection: mondodb.GetCollection(collection),
+			collection: mongodb.GetCollection(collection),
 		}
 	})
 	return service
@@ -35,14 +35,8 @@ type Service struct {
 	collection *mongo.Collection
 }
 
-type logEntry struct {
-	Message   string         `bson:"message" json:"message"`
-	Timestamp time.Time      `bson:"timestamp" json:"timestamp"`
-	Metadata  map[string]any `bson:"metadata,omitempty" json:"metadata,omitempty"`
-}
-
 func (s *Service) Log(message string, metadata map[string]any) error {
-	entry := &logEntry{
+	entry := &LogEntry{
 		Message:   message,
 		Metadata:  metadata,
 		Timestamp: time.Now(),
