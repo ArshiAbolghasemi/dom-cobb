@@ -12,9 +12,8 @@ Dom Cobb dives deep into the layered world of feature flags. This backend servic
 - **Dockerized**: Fully containerized with Docker Compose for easy deployment
 - **Testing Suite**: Comprehensive test coverage with Ginkgo testing framework
 
-## 🏗️ Architecture
+## Tech Stack
 
-### Tech Stack
 - **Backend**: Go with Gin framework
 - **Primary Database**: PostgreSQL (feature flags and dependencies)
 - **Audit Database**: MongoDB (operation logs)
@@ -32,7 +31,7 @@ Dom Cobb dives deep into the layered world of feature flags. This backend servic
 
 1. **Clone the repository**
    ```bash
-   git clone 
+   git clone https://github.com/ArshiAbolghasemi/dom-cobb
    cd dom-cobb
    ```
 
@@ -93,11 +92,5 @@ docker-compose exec dom-cobb ginkgo run -r -v
 
 ### Base URL
 ```
-http://localhost:8080/api/v1
+TODO
 ```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Copy `.env.example` to `.env` and configure:
