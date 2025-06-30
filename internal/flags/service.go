@@ -11,8 +11,8 @@ import (
 )
 
 type Service struct {
-	repo   IRepository
-	logger logger.IService
+	Repo   IRepository
+	Logger logger.IService
 }
 
 var (
@@ -23,8 +23,8 @@ var (
 func GetService(repo IRepository, logger logger.IService) *Service {
 	onceService.Do(func() {
 		service = &Service{
-			repo:   repo,
-			logger: logger,
+			Repo:   repo,
+			Logger: logger,
 		}
 	})
 	return service
@@ -37,7 +37,7 @@ func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*CreateFeatu
 		return nil, api.BadRequestError("Invalid input format", err.Error())
 	}
 
-	flag, err := s.repo.GetFlagByName(req.Name)
+	flag, err := s.Repo.GetFlagByName(req.Name)
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
@@ -49,7 +49,7 @@ func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*CreateFeatu
 		return &req, nil
 	}
 
-	dependencyFlags, err := s.repo.GetFlagByIds(req.FeatureFlagIDDependencies)
+	dependencyFlags, err := s.Repo.GetFlagByIds(req.FeatureFlagIDDependencies)
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
@@ -70,12 +70,12 @@ func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*CreateFeatu
 }
 
 func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) *api.APIError {
-	flag, err := s.repo.CreateFlag(req.Name, req.IsActive, req.FeatureFlagIDDependencies)
+	flag, err := s.Repo.CreateFlag(req.Name, req.IsActive, req.FeatureFlagIDDependencies)
 	if err != nil {
 		return api.InternalServerError("Internal Server Error", err.Error())
 	}
 
-	s.logger.Log(
+	s.Logger.Log(
 		"Feature Flag is created successfully",
 		map[string]any{
 			"flag_id": flag.ID,
@@ -100,7 +100,7 @@ func (s *Service) ValidateUpdateFeatureFlagRequest(
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, nil, api.BadRequestError("Invalid input format", err.Error())
 	}
-	flag, err := s.repo.GetFlagById(uint(flagId))
+	flag, err := s.Repo.GetFlagById(uint(flagId))
 	if err != nil {
 		return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
@@ -115,7 +115,7 @@ func (s *Service) ValidateUpdateFeatureFlagRequest(
 		return nil, nil, api.OKError(fmt.Sprintf("Flag is already %s", status), "")
 	}
 	if req.IsActive {
-		flagDependencies, err := s.repo.GetFlagDependencies(flag)
+		flagDependencies, err := s.Repo.GetFlagDependencies(flag)
 		if err != nil {
 			return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 		}
@@ -126,7 +126,7 @@ func (s *Service) ValidateUpdateFeatureFlagRequest(
 			)
 		}
 	} else {
-		flagDependents, err := s.repo.GetFlagDependents(flag)
+		flagDependents, err := s.Repo.GetFlagDependents(flag)
 		if err != nil {
 			return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 		}
@@ -160,12 +160,12 @@ func (s *Service) canDeactivateFlag(flagDependents []*FeatureFlag) bool {
 }
 
 func (s *Service) UpdateFeatureFlag(flag *FeatureFlag, req *UpdateFeatureFlagRequest) *api.APIError {
-	err := s.repo.UpdateFlag(flag, req.IsActive)
+	err := s.Repo.UpdateFlag(flag, req.IsActive)
 	if err != nil {
 		return api.InternalServerError("Internal Server Error", err.Error())
 	}
 
-	s.logger.Log(
+	s.Logger.Log(
 		"Feature Flag is toggled successfully",
 		map[string]any{
 			"flag_id": flag.ID,
@@ -183,7 +183,7 @@ func (s *Service) ValidateGetFeatureFlagRequest(c *gin.Context) (*FeatureFlag, *
 		return nil, api.BadRequestError("Invalid input format", err.Error())
 	}
 
-	flag, err := s.repo.GetFlagById(uint(flagId))
+	flag, err := s.Repo.GetFlagById(uint(flagId))
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
@@ -195,12 +195,12 @@ func (s *Service) ValidateGetFeatureFlagRequest(c *gin.Context) (*FeatureFlag, *
 }
 
 func (s *Service) GetFeatureFlag(flag *FeatureFlag) (*FeatureFlagData, *api.APIError) {
-	dependencies, err := s.repo.GetFlagDependencies(flag)
+	dependencies, err := s.Repo.GetFlagDependencies(flag)
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
 
-	dependents, err := s.repo.GetFlagDependents(flag)
+	dependents, err := s.Repo.GetFlagDependents(flag)
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
@@ -235,7 +235,7 @@ func (s *Service) ValidateGetFeatureFlagLogsRequest(
 	if err != nil {
 		return nil, nil, api.BadRequestError("Invalid input format", err.Error())
 	}
-	flag, err := s.repo.GetFlagById(uint(flagId))
+	flag, err := s.Repo.GetFlagById(uint(flagId))
 	if err != nil {
 		return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
@@ -258,7 +258,7 @@ func (s *Service) GetFeatureFlagLogs(
 	*GetFeatureFlagLogsData,
 	*api.APIError,
 ) {
-	logs, total, totalPages, err := s.repo.GetFeatureFlagLogs(flag, query.Page, query.Size)
+	logs, total, totalPages, err := s.Repo.GetFeatureFlagLogs(flag, query.Page, query.Size)
 	if err != nil {
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
