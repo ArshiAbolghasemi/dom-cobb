@@ -51,7 +51,6 @@ func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*CreateFeatu
 
 	dependencyFlags, err := s.repo.GetFlagByIds(req.FeatureFlagIDDependencies)
 	if err != nil {
-
 		return nil, api.InternalServerError("Internal Server Error", err.Error())
 	}
 	if len(dependencyFlags) != len(req.FeatureFlagIDDependencies) {
