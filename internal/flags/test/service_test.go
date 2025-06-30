@@ -7,6 +7,7 @@ import (
 	mockFlags "github.com/ArshiAbolghasemi/dom-cobb/internal/flags/test/mock"
 	mockLogger "github.com/ArshiAbolghasemi/dom-cobb/internal/logger/test/mock"
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/testutils"
+	"github.com/brianvoe/gofakeit/v7"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -101,6 +102,7 @@ var _ = Describe("Service", func() {
 
 					result, err := service.ValidateCreateFeatureFlagRequest(c)
 
+					Expect(err).NotTo(BeNil())
 					Expect(err.StatusCode).To(Equal(httpCode))
 					Expect(result).To(BeNil())
 
@@ -184,6 +186,33 @@ var _ = Describe("Service", func() {
 					http.StatusBadRequest,
 				),
 			)
+		})
+
+		When("Internal Server Error is happened", func() {
+			It("should return api error with status code 500", func() {
+				repo := &mockFlags.MockRepository{}
+				repo.On("GetFlagByName", "otp").Return(nil, gofakeit.ErrorDatabase())
+				logger := &mockLogger.MockLogger{}
+				service := &flags.Service{
+					Repo:   repo,
+					Logger: logger,
+				}
+
+				req := flags.CreateFeatureFlagRequest{
+					Name: "otp",
+					IsActive: true,
+				}
+				c, _ := testutils.CreateJSONRequest(http.MethodPost, "/api/v1/flags", req)
+
+				result, err := service.ValidateCreateFeatureFlagRequest(c)
+
+				Expect(err).NotTo(BeNil())
+				Expect(err.StatusCode).To(Equal(http.StatusInternalServerError))
+				Expect(result).To(BeNil())
+
+				repo.AssertExpectations(GinkgoT())
+				logger.AssertExpectations(GinkgoT())
+			})
 		})
 	})
 })
