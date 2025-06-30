@@ -85,7 +85,7 @@ docker-compose exec dom-cobb ginkgo run -r
 
 Run tests with verbose output:
 ```bash
-docker-compose exec dom-cobb ginkgo run -r -v
+docker-compose exec dom-cobb ginkgo run -rvv
 ```
 
 ## 📚 API Documentation
