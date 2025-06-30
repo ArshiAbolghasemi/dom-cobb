@@ -80,12 +80,16 @@ Dom Cobb dives deep into the layered world of feature flags. This backend servic
 
 Run the complete test suite:
 ```bash
-docker-compose exec dom-cobb ginkgo run -r
-```
-
-Run tests with verbose output:
-```bash
-docker-compose exec dom-cobb ginkgo run -r -vv
+docker run --name dom-cobb-test --rm \
+  -v $(pwd):/app \
+  -w /app \
+  golang:1.24.1-alpine \
+  sh -c "
+    go mod download &&
+    go install github.com/onsi/ginkgo/v2/ginkgo@v2.23.3 &&
+    go get github.com/onsi/gomega/... &&
+    ginkgo run -r -vv
+  "
 ```
 
 ## 📚 API Documentation
