@@ -1,4 +1,4 @@
-package swagger
+package main
 
 import _ "github.com/ArshiAbolghasemi/dom-cobb/docs"
 

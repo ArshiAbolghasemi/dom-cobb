@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN swag init -g ./internal/swagger/main.go -o ./docs
+RUN swag init -g ./cmd/swagger/main.go -o ./docs
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/server/main.go
 
