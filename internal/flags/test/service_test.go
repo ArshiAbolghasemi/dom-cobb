@@ -199,7 +199,7 @@ var _ = Describe("Service", func() {
 				}
 
 				req := flags.CreateFeatureFlagRequest{
-					Name: "otp",
+					Name:     "otp",
 					IsActive: true,
 				}
 				c, _ := testutils.CreateJSONRequest(http.MethodPost, "/api/v1/flags", req)
