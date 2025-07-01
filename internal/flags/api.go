@@ -8,16 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CreateFeatureFlagRequest struct {
-	Name                      string `json:"name" binding:"required,min=1,max=255"`
-	IsActive                  bool   `json:"active"`
-	FeatureFlagIDDependencies []uint `json:"feature_flag_id_dependencies"`
-}
-
 func newFeatureFlagService() *Service {
 	repo := GetRepository()
 	logger := logger.NewService()
 	return GetService(repo, logger)
+}
+
+type CreateFeatureFlagRequest struct {
+	Name                      string `json:"name" binding:"required,min=1,max=255"`
+	IsActive                  bool   `json:"active"`
+	FeatureFlagIDDependencies []uint `json:"feature_flag_id_dependencies"`
 }
 
 func CreateFeatureFlagAPI(c *gin.Context) {
