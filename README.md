@@ -92,9 +92,9 @@ docker run --name dom-cobb-test --rm \
   "
 ```
 
-## 📚 API Documentation
+## API Documentation
 
-### Base URL
+You can see dom-cobb's swagger in this url
 ```
-TODO
+http://localhost:8080/swagger/index.html
 ```
