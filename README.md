@@ -47,11 +47,11 @@ Dom Cobb dives deep into the layered world of feature flags. This backend servic
    ```
 
 4. **Initialize the database**
-   
+
    The PostgreSQL database will be automatically initialized with the required tables. If you need to manually create them:
    ```sql
    CREATE DATABASE dom_cobb;
-   
+
    CREATE TABLE feature_flags (
        id SERIAL PRIMARY KEY,
        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -60,10 +60,10 @@ Dom Cobb dives deep into the layered world of feature flags. This backend servic
        "name" VARCHAR(255) NOT NULL,
        is_active BOOLEAN NOT NULL DEFAULT FALSE
    );
-   
+
    CREATE UNIQUE INDEX idx_feature_flags_name ON feature_flags (name);
    CREATE INDEX idx_feature_flags_deleted_at ON feature_flags (deleted_at);
-   
+
    CREATE TABLE flag_dependencies (
        flag_id BIGINT NOT NULL,
        depends_on_flag_id BIGINT NOT NULL,
