@@ -52,7 +52,7 @@ func (s *Service) Log(entry *LogEntry) error {
 func (s *Service) LogBatch(entries []*LogEntry) error {
 	if len(entries) == 0 {
 		return nil
-	}	
+	}
 
 	writeTimeout, err := GetWriteTimeOut()
 	if err != nil {

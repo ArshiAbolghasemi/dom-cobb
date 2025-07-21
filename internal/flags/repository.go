@@ -207,7 +207,7 @@ func (r *Repository) deactivateFlag(flag *FeatureFlag) error {
 		logEntries = append(logEntries, &logger.LogEntry{
 			Message: "Flag is auto disabled",
 			Metadata: map[string]any{
-				"flag_id": flagDependent.ID,
+				"flag_id":           flagDependent.ID,
 				"dependecy_flag_id": flag.ID,
 			},
 			Timestamp: time.Now(),
