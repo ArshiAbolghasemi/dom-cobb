@@ -79,17 +79,15 @@ Dom Cobb dives deep into the layered world of feature flags. This backend servic
 ## Testing
 
 Run the complete test suite:
+
 ```bash
-docker run --name dom-cobb-test --rm \
+docker build -t dom-cobb-tests -f Dockerfile.test . && \
+docker run --rm \
   -v $(pwd):/app \
+  -v go-cache:/go/pkg/mod \
+  -v go-build-cache:/root/.cache/go-build \
   -w /app \
-  golang:1.24.1-alpine \
-  sh -c "
-    go mod download &&
-    go install github.com/onsi/ginkgo/v2/ginkgo@v2.23.3 &&
-    go get github.com/onsi/gomega/... &&
-    ginkgo run -r -vv
-  "
+  dom-cobb-tests
 ```
 
 ## API Documentation
