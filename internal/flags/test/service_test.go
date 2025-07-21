@@ -3,6 +3,7 @@ package flags_test
 import (
 	"net/http"
 
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/api"
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/flags"
 	mockFlags "github.com/ArshiAbolghasemi/dom-cobb/internal/flags/test/mock"
 	mockLogger "github.com/ArshiAbolghasemi/dom-cobb/internal/logger/test/mock"
@@ -10,6 +11,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 var _ = Describe("Service", func() {
@@ -213,6 +215,65 @@ var _ = Describe("Service", func() {
 				repo.AssertExpectations(GinkgoT())
 				logger.AssertExpectations(GinkgoT())
 			})
+		})
+	})
+
+	Describe("Create Feature Flag", func() {
+		var (
+			repo    *mockFlags.MockRepository
+			logger  *mockLogger.MockLogger
+			service *flags.Service
+		)
+
+		BeforeEach(func() {
+			repo = &mockFlags.MockRepository{}
+			logger = &mockLogger.MockLogger{}
+			service = &flags.Service{
+				Repo:   repo,
+				Logger: logger,
+			}
+		})
+
+		AfterEach(func() {
+			repo.AssertExpectations(GinkgoT())
+			logger.AssertExpectations(GinkgoT())
+			repo = nil
+			logger = nil
+			service = nil
+		})
+
+		When("feature flag is created successfully", func() {
+			It("Should return no error", func() {
+				req := &flags.CreateFeatureFlagRequest{
+					Name:                      gofakeit.Noun(),
+					IsActive:                  gofakeit.Bool(),
+					FeatureFlagIDDependencies: []uint{},
+				}
+
+				flag := mockFlags.CreateFeatureFlag(mockFlags.WithName(req.Name), mockFlags.WithIsActive(req.IsActive))
+				repo.On("CreateFlag", req.Name, req.IsActive, req.FeatureFlagIDDependencies).Return(flag, nil)
+				logger.On("Log", mock.AnythingOfType("*logger.LogEntry")).Return(nil)
+
+				result := service.CreateFeatureFlag(req)
+				Expect(result).To(BeNil())
+			})
+		})
+
+		When("internal server error is happened", func() {
+			It("Should return no error", func() {
+				req := &flags.CreateFeatureFlagRequest{
+					Name:                      gofakeit.Noun(),
+					IsActive:                  gofakeit.Bool(),
+					FeatureFlagIDDependencies: []uint{},
+				}
+
+				err := gofakeit.ErrorDatabase()
+				repo.On("CreateFlag", req.Name, req.IsActive, req.FeatureFlagIDDependencies).Return(nil, err)
+
+				result := service.CreateFeatureFlag(req)
+				Expect(result).To(Equal(api.InternalServerError("Internal Server Error", err.Error())))
+			})
+
 		})
 	})
 })
