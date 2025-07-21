@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/api"
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/logger"
@@ -75,12 +76,13 @@ func (s *Service) CreateFeatureFlag(req *CreateFeatureFlagRequest) *api.APIError
 		return api.InternalServerError("Internal Server Error", err.Error())
 	}
 
-	s.Logger.Log(
-		"Feature Flag is created successfully",
-		map[string]any{
+	s.Logger.Log(&logger.LogEntry{
+		Message: "Feature Flag is created successfully",
+		Metadata: map[string]any{
 			"flag_id": flag.ID,
 		},
-	)
+		Timestamp: time.Now(),
+	})
 
 	return nil
 }
@@ -114,28 +116,20 @@ func (s *Service) ValidateUpdateFeatureFlagRequest(
 		}
 		return nil, nil, api.OKError(fmt.Sprintf("Flag is already %s", status), "")
 	}
-	if req.IsActive {
-		flagDependencies, err := s.Repo.GetFlagDependencies(flag)
-		if err != nil {
-			return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
-		}
-		if canActivate, inactiveIds := s.canActivateFlag(flagDependencies); !canActivate {
-			return nil, nil, api.BadRequestError(
-				"Dependency validation failed",
-				fmt.Sprintf("Cannot activate feature flag. Missing dependency IDs: %v", inactiveIds),
-			)
-		}
-	} else {
-		flagDependents, err := s.Repo.GetFlagDependents(flag)
-		if err != nil {
-			return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
-		}
-		if !s.canDeactivateFlag(flagDependents) {
-			return nil, nil, api.BadRequestError(
-				"Dependents still active",
-				"Cannot dectivate feature flag when dependents are active",
-			)
-		}
+
+	if !req.IsActive {
+		return flag, &req, nil
+	}
+
+	flagDependencies, err := s.Repo.GetFlagDependencies(flag)
+	if err != nil {
+		return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
+	}
+	if canActivate, inactiveIds := s.canActivateFlag(flagDependencies); !canActivate {
+		return nil, nil, api.BadRequestError(
+			"Dependency validation failed",
+			fmt.Sprintf("Cannot activate feature flag. Missing dependency IDs: %v", inactiveIds),
+		)
 	}
 
 	return flag, &req, nil
@@ -151,29 +145,21 @@ func (s *Service) canActivateFlag(flagDependencies []*FeatureFlag) (bool, []uint
 	return len(inactiveIds) == 0, inactiveIds
 }
 
-func (s *Service) canDeactivateFlag(flagDependents []*FeatureFlag) bool {
-	for _, depFlag := range flagDependents {
-		if depFlag.IsActive {
-			return false
-		}
-	}
-	return true
-}
-
 func (s *Service) UpdateFeatureFlag(flag *FeatureFlag, req *UpdateFeatureFlagRequest) *api.APIError {
 	err := s.Repo.UpdateFlag(flag, req.IsActive)
 	if err != nil {
 		return api.InternalServerError("Internal Server Error", err.Error())
 	}
 
-	s.Logger.Log(
-		"Feature Flag is toggled successfully",
-		map[string]any{
+	s.Logger.Log(&logger.LogEntry{
+		Message: "Feature Flag is toggled successfully",
+		Metadata: map[string]any{
 			"flag_id": flag.ID,
 			"active":  flag.IsActive,
 			"reason":  req.Reason,
 		},
-	)
+		Timestamp: time.Now(),
+	})
 
 	return nil
 }

@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/mongodb"
+	"github.com/ArshiAbolghasemi/dom-cobb/internal/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type IService interface {
-	Log(message string, metadata map[string]any) error
+	Log(entry *LogEntry) error
+	LogBatch(entries []*LogEntry) error
 }
 
 var (
@@ -35,12 +37,7 @@ type Service struct {
 	collection *mongo.Collection
 }
 
-func (s *Service) Log(message string, metadata map[string]any) error {
-	entry := &LogEntry{
-		Message:   message,
-		Metadata:  metadata,
-		Timestamp: time.Now(),
-	}
+func (s *Service) Log(entry *LogEntry) error {
 	writeTimeout, err := GetWriteTimeOut()
 	if err != nil {
 		panic("Faile to get mongo write time out: " + err.Error())
@@ -49,5 +46,22 @@ func (s *Service) Log(message string, metadata map[string]any) error {
 	defer cancel()
 
 	_, err = s.collection.InsertOne(ctx, entry)
+	return err
+}
+
+func (s *Service) LogBatch(entries []*LogEntry) error {
+	if len(entries) == 0 {
+		return nil
+	}	
+
+	writeTimeout, err := GetWriteTimeOut()
+	if err != nil {
+		panic("Failed to get mongo write time out: " + err.Error())
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), writeTimeout*time.Second)
+	defer cancel()
+
+	_, err = s.collection.InsertMany(ctx, utils.ToAnySlice(entries))
 	return err
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/mongodb"
 	"github.com/ArshiAbolghasemi/dom-cobb/internal/database/postgres"
@@ -157,14 +158,86 @@ func (r *Repository) CreateFlag(name string, active bool, dependecnyFlagIds []ui
 }
 
 func (r *Repository) UpdateFlag(flag *FeatureFlag, active bool) error {
-	err := r.db.Model(flag).Update("is_active", active).Error
+	if active {
+		return r.activateFlag(flag)
+	}
+	return r.deactivateFlag(flag)
+}
+
+func (r *Repository) activateFlag(flag *FeatureFlag) error {
+	err := r.db.Model(flag).Update("is_active", true).Error
+	if err != nil {
+		return err
+	}
+	flag.IsActive = true
+	return nil
+}
+
+func (r *Repository) deactivateFlag(flag *FeatureFlag) error {
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	allTransitiveDependents, err := r.getAllTransitiveDependents(flag)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	flagIDs := []uint{flag.ID}
+	for _, dependent := range allTransitiveDependents {
+		flagIDs = append(flagIDs, dependent.ID)
+	}
+
+	err = tx.Model(&FeatureFlag{}).Where("id IN ? AND is_active = true", flagIDs).Update("is_active", false).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit().Error
 	if err != nil {
 		return err
 	}
 
-	flag.IsActive = active
+	logEntries := make([]*logger.LogEntry, 0, len(allTransitiveDependents))
+	for _, flagDependent := range allTransitiveDependents {
+		flagDependent.IsActive = false
+		logEntries = append(logEntries, &logger.LogEntry{
+			Message: "Flag is auto disabled",
+			Metadata: map[string]any{
+				"flag_id": flagDependent.ID,
+				"dependecy_flag_id": flag.ID,
+			},
+			Timestamp: time.Now(),
+		})
+	}
+	logger.NewService().LogBatch(logEntries)
 
+	flag.IsActive = false
 	return nil
+}
+
+func (r *Repository) getAllTransitiveDependents(flag *FeatureFlag) ([]*FeatureFlag, error) {
+	var dependentFlags []*FeatureFlag
+	err := r.db.Raw(`
+		WITH RECURSIVE dependents AS (
+			SELECT flag_id as id
+			FROM flag_dependencies 
+			WHERE depends_on_flag_id = ?
+			
+			UNION ALL
+
+			SELECT fd.flag_id as id
+			FROM flag_dependencies fd
+			INNER JOIN dependents d ON fd.depends_on_flag_id = d.id
+		)
+		SELECT f.* FROM feature_flags f
+		INNER JOIN dependents d ON f.id = d.id
+		ORDER BY f.id
+	`, flag.ID).Scan(&dependentFlags).Error
+	return dependentFlags, err
 }
 
 func (r *Repository) GetFeatureFlagLogs(flag *FeatureFlag, page, size uint) ([]*logger.LogEntry, uint, uint, error) {
