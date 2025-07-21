@@ -90,7 +90,7 @@ var _ = Describe("Service", func() {
 			)
 		})
 
-		When("Request is invalida", func() {
+		When("Request is invalid", func() {
 			DescribeTable("should return error with empty instance of request",
 				func(
 					setupMock func() (*flags.Service, *mockFlags.MockRepository, *mockLogger.MockLogger),
