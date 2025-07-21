@@ -1,0 +1,16 @@
+FROM golang:1.24.1-alpine
+
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+RUN go mod download
+
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@v2.23.3 && \
+    go install github.com/onsi/gomega/...
+
+COPY . .
+
+CMD ["ginkgo", "run", "-r", "-vv"]
