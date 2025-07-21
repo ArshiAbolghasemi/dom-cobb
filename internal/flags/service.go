@@ -58,10 +58,10 @@ func (s *Service) ValidateCreateFeatureFlagRequest(c *gin.Context) (*CreateFeatu
 	}
 
 	if req.IsActive {
-		if !s.canActivateFlag(dependencyFlags) {
+		if canActivate, inactiveIds := s.canActivateFlag(dependencyFlags); !canActivate {
 			return nil, api.BadRequestError(
 				"Dependency validation failed",
-				"Cannot activate feature flag when dependencies are inactive",
+				fmt.Sprintf("Cannot activate feature flag. Missing dependency IDs: %v", inactiveIds),
 			)
 		}
 	}
@@ -119,10 +119,10 @@ func (s *Service) ValidateUpdateFeatureFlagRequest(
 		if err != nil {
 			return nil, nil, api.InternalServerError("Internal Server Error", err.Error())
 		}
-		if !s.canActivateFlag(flagDependencies) {
+		if canActivate, inactiveIds := s.canActivateFlag(flagDependencies); !canActivate {
 			return nil, nil, api.BadRequestError(
-				"Dependencies not satisfied",
-				"Cannot activate feature flag when dependencies are inactive",
+				"Dependency validation failed",
+				fmt.Sprintf("Cannot activate feature flag. Missing dependency IDs: %v", inactiveIds),
 			)
 		}
 	} else {
@@ -141,13 +141,14 @@ func (s *Service) ValidateUpdateFeatureFlagRequest(
 	return flag, &req, nil
 }
 
-func (s *Service) canActivateFlag(flagDependencies []*FeatureFlag) bool {
+func (s *Service) canActivateFlag(flagDependencies []*FeatureFlag) (bool, []uint) {
+	var inactiveIds []uint
 	for _, depFlag := range flagDependencies {
 		if !depFlag.IsActive {
-			return false
+			inactiveIds = append(inactiveIds, depFlag.ID)
 		}
 	}
-	return true
+	return len(inactiveIds) == 0, inactiveIds
 }
 
 func (s *Service) canDeactivateFlag(flagDependents []*FeatureFlag) bool {
