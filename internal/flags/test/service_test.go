@@ -273,7 +273,6 @@ var _ = Describe("Service", func() {
 				result := service.CreateFeatureFlag(req)
 				Expect(result).To(Equal(api.InternalServerError("Internal Server Error", err.Error())))
 			})
-
 		})
 	})
 })
